@@ -30,6 +30,5 @@ jobs:
       - name: Validate portfolio.json
         run: python scripts/validate_portfolio.py
 
-      # Uncomment when the project runs in a container.
-      # - name: Docker build
-      #   run: docker build -t project .
+      - name: Run the application
+        run: python -m expense_tracker --help

@@ -14,6 +14,7 @@ dependencies = []
 [project.optional-dependencies]
 dev = [
     "pytest==9.2.0",
+    "pytest-cov==7.1.0",
     "ruff==0.17.5",
 ]
 
@@ -23,7 +24,15 @@ where = ["src"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src", "scripts"]
-addopts = "-ra"
+addopts = "-ra --cov=expense_tracker --cov-report=term-missing"
+
+[tool.coverage.run]
+branch = true
+
+[tool.coverage.report]
+# The requirement is 80% on the domain logic. The whole package is held to 90%,
+# so `pytest` fails (locally and in CI) if coverage drops below that.
+fail_under = 90
 
 [tool.ruff]
 line-length = 100
