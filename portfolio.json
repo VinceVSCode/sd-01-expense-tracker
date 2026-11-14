@@ -1,0 +1,14 @@
+{
+  "id": "sd-01",
+  "title": "Expense Tracker CLI",
+  "track": "software-developer",
+  "summary": "A modular command-line expense tracker with monthly reports and CSV export.",
+  "skills": ["Python", "OOP", "Unit Testing", "Git", "CLI design"],
+  "repo": "https://github.com/<GITHUB_USER>/sd-01-expense-tracker",
+  "demo_url": null,
+  "thumbnail": "docs/media/thumbnail.png",
+  "demo_media": "docs/media/demo.png",
+  "run_command": "python -m expense_tracker --help",
+  "status": "in-progress",
+  "version": "1.0.0"
+}
