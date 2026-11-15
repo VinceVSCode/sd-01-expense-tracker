@@ -32,3 +32,9 @@ jobs:
 
       - name: Run the application
         run: python -m expense_tracker --help
+
+      - name: Docker build and run
+        run: |
+          docker compose build
+          docker compose run --rm expense-tracker add 12.50 food
+          docker compose run --rm expense-tracker list

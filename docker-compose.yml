@@ -1,0 +1,8 @@
+services:
+  expense-tracker:
+    build: .
+    volumes:
+      - expense-data:/data
+
+volumes:
+  expense-data:
