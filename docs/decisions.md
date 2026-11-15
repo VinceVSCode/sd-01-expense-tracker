@@ -17,6 +17,7 @@ One page on the choices made in this project and their trade-offs.
 | 2026-11-14 | CSV export puts a quote before text that starts with `=`, `+`, `-` or `@` | writing the text as it is | A spreadsheet would otherwise run such a note as a formula. |
 | 2026-11-14 | Coverage is measured with `pytest-cov` and `pytest` fails below 90% | `coverage` run by hand, or no threshold | The requirement (80% on the domain logic) is then enforced on every run, also in CI. |
 | 2026-11-14 | The images in `docs/media/` are drawn from the captured text output of `scripts/demo.py` | a screenshot of a terminal window | The capture can be repeated exactly. The text in the images is the application's real output; only the window frame is drawn. |
+| 2026-11-15 | A `Dockerfile` and a `docker-compose.yml` are included, holding only what a local run needs | no container files | Someone with Docker can run the project without installing Python. The data file is on a named volume, so it stays between runs. |
 
 ## Trade-offs
 

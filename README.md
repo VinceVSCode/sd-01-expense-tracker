@@ -6,7 +6,7 @@ A modular command-line expense tracker with monthly reports and CSV export.
 
 ![Terminal showing the list and summary commands](docs/media/thumbnail.png)
 
-The full demo session is in [docs/media/demo.png](docs/media/demo.png). Both images show the real output of `python scripts/demo.py`. The project has no hosted demo, because it is a command-line tool.
+More images are in `docs/media/`: the full demo session ([demo.png](docs/media/demo.png)) and the test run with coverage ([tests.png](docs/media/tests.png)). They show the real output of `python scripts/demo.py` and `pytest`. The project has no hosted demo, because it is a command-line tool.
 
 ## Core focus
 
@@ -37,6 +37,20 @@ python -m expense_tracker --help
 ```
 
 On macOS or Linux, activate the environment with `source .venv/bin/activate`.
+
+### Run with Docker instead
+
+If you have Docker, you do not need Python. Put the command after the service name:
+
+```bash
+docker compose run --rm expense-tracker add 12.50 food --note lunch
+```
+
+```bash
+docker compose run --rm expense-tracker summary
+```
+
+The expenses are kept in a Docker volume named `expense-data`, so they stay between runs. To get a CSV file out of the container, add `-v "$PWD:/out"` after `run` and export to `/out/expenses.csv`.
 
 ### Commands
 
