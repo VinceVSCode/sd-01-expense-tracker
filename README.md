@@ -2,6 +2,8 @@
 
 A modular command-line expense tracker with monthly reports and CSV export.
 
+> **Status:** pending quality review. This project has not had its final review yet.
+
 ## Demo
 
 ![Terminal showing the list and summary commands](docs/media/thumbnail.png)
