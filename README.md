@@ -2,7 +2,7 @@
 
 A modular command-line expense tracker with monthly reports and CSV export.
 
-> **Status:** pending quality review. This project has not had its final review yet.
+> **Status:** complete. Passed its quality review on 2026-11-18 (version 1.0.1).
 
 ## Demo
 
@@ -18,27 +18,38 @@ Clean, modular, object-oriented code for a small but complete application: three
 
 - Python (standard library only at run time)
 - Object-oriented design with separated layers
-- Unit testing with `pytest` (175 tests, coverage enforced)
+- Unit testing with `pytest` (201 tests, coverage enforced)
 - Git version control with small, focused commits
 - Command-line interface design
 
 ## Quick start
 
-You need Python 3.11 or newer.
+You need Python 3.11 or newer. Run these in the project folder.
 
-```bash
-python -m venv .venv && .venv/Scripts/activate
-```
+1. Create a virtual environment:
 
-```bash
-pip install -e ".[dev]"
-```
+   ```bash
+   python -m venv .venv
+   ```
 
-```bash
-python -m expense_tracker --help
-```
+2. Activate it. The command depends on your system:
 
-On macOS or Linux, activate the environment with `source .venv/bin/activate`.
+   | System and shell | Command |
+   |---|---|
+   | Windows, PowerShell | `.venv\Scripts\Activate.ps1` |
+   | Windows, Command Prompt | `.venv\Scripts\activate.bat` |
+   | Windows, Git Bash | `source .venv/Scripts/activate` |
+   | macOS or Linux | `source .venv/bin/activate` |
+
+3. Install and run:
+
+   ```bash
+   pip install -e ".[dev]"
+   ```
+
+   ```bash
+   python -m expense_tracker --help
+   ```
 
 ### Run with Docker instead
 
@@ -94,11 +105,11 @@ The design choices are explained in [docs/decisions.md](docs/decisions.md).
 
 ## Results
 
-Measured on Windows with Python 3.13 on 2026-11-14:
+Measured on Windows with Python 3.13 on 2026-11-18:
 
 | Check | Result |
 |---|---|
-| Tests | 175 pass |
+| Tests | 201 pass |
 | Coverage, domain logic (`domain.py`) | 100% (requirement: at least 80%) |
 | Coverage, whole package | 98% (lines and branches); `pytest` fails below 90% |
 | Lint (`ruff check .`) | passes |
@@ -123,9 +134,20 @@ python scripts/validate_portfolio.py
 ## Limitations
 
 - One currency. Amounts are plain numbers with two decimal places and no currency symbol.
+- Amounts are written with digits and a decimal point (`12.50`). Scientific notation (`1e2`) and thousands separators (`1,000`) are refused, and the largest amount is 999,999,999.99.
 - Expenses cannot be edited or deleted from the command line yet.
 - The whole file is read and rewritten on every command. That is fine for personal use, but not for very large files.
 - It is made for one user at a time. Two commands writing at the same moment could lose one of the changes.
+
+## Changes
+
+**1.0.1** (2026-11-18), after the quality review:
+
+- Very large amounts (29 digits or more, or `1e30`) caused a `decimal.InvalidOperation` crash. Amounts are now limited to 999,999,999.99 and anything larger gives a clear error, from the command line and from the data file.
+- A data file that is not UTF-8 caused a `UnicodeDecodeError` crash. It is now reported as a damaged file and left unchanged.
+- On Windows, Greek and other non-Latin text caused a `UnicodeEncodeError` crash when the output was redirected to a file or a pipe, after the expense had already been saved. The output is now always UTF-8.
+- Amounts in scientific notation (`1e2`) are refused.
+- Each of these has a test that failed before the fix.
 
 ## Next steps
 

@@ -18,6 +18,9 @@ One page on the choices made in this project and their trade-offs.
 | 2026-11-14 | Coverage is measured with `pytest-cov` and `pytest` fails below 90% | `coverage` run by hand, or no threshold | The requirement (80% on the domain logic) is then enforced on every run, also in CI. |
 | 2026-11-14 | The images in `docs/media/` are drawn from the captured text output of `scripts/demo.py` | a screenshot of a terminal window | The capture can be repeated exactly. The text in the images is the application's real output; only the window frame is drawn. |
 | 2026-11-15 | A `Dockerfile` and a `docker-compose.yml` are included, holding only what a local run needs | no container files | Someone with Docker can run the project without installing Python. The data file is on a named volume, so it stays between runs. |
+| 2026-11-18 | Amounts are plain digits with an optional decimal point, at most 999,999,999.99 | accepting anything `Decimal` reads, or no upper limit | `Decimal` also reads `1e2`, `1_000` and digits from other scripts, which a person would not mean as an amount. Without a limit, amounts above 26 digits crashed with `decimal.InvalidOperation`, and large sums could lose cents, because `Decimal` keeps 28 significant digits. |
+| 2026-11-18 | Each known failure is caught as its own exception type (`decimal.InvalidOperation`, `UnicodeDecodeError`) where it happens, and turned into a clear message with the original error kept as its cause | one catch-all handler around the whole command | A catch-all would also hide new bugs. Catching each type where it happens keeps the message specific, and the kept cause shows the original error when debugging. Every case has a test. |
+| 2026-11-18 | Printed output is always UTF-8 | the system's code page | On Windows, redirected output uses a legacy code page that cannot hold Greek text. The data and CSV files are already UTF-8. |
 
 ## Trade-offs
 

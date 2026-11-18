@@ -10,5 +10,5 @@
   "demo_media": "docs/media/demo.png",
   "run_command": "python -m expense_tracker --help",
   "status": "complete",
-  "version": "1.0.0"
+  "version": "1.0.1"
 }
