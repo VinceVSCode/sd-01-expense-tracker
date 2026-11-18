@@ -127,6 +127,17 @@ def test_a_damaged_file_gives_a_clear_error(tmp_path: Path, text: str, reason: s
     assert path.read_text(encoding="utf-8") == text
 
 
+def test_a_file_that_is_not_utf8_gives_a_clear_error(tmp_path: Path) -> None:
+    # Before 1.0.1 this raised UnicodeDecodeError, a crash with a traceback.
+    path = tmp_path / "expenses.json"
+    path.write_bytes(b"\xff\xfe\x00")
+    with pytest.raises(StorageError, match="not UTF-8 text") as caught:
+        JsonExpenseRepository(path).load()
+    assert ".." not in str(caught.value)
+    assert isinstance(caught.value.__cause__, UnicodeDecodeError)
+    assert path.read_bytes() == b"\xff\xfe\x00"
+
+
 @pytest.mark.parametrize(
     "bad_record",
     [
@@ -141,6 +152,8 @@ def test_a_damaged_file_gives_a_clear_error(tmp_path: Path, text: str, reason: s
         record(amount="abc"),
         record(amount="-1.00"),
         record(amount=12.5),
+        record(amount="1e30"),
+        record(amount="99999999999999999999999999999"),
         record(description=5),
     ],
 )
@@ -164,3 +177,11 @@ def test_a_record_without_a_description_is_accepted(tmp_path: Path) -> None:
     del without["description"]
     write(path, {"version": 1, "expenses": [without]})
     assert JsonExpenseRepository(path).load()[0].description == ""
+
+
+def test_a_reason_ending_in_a_full_stop_is_not_doubled(tmp_path: Path) -> None:
+    path = tmp_path / "expenses.json"
+    write(path, {"version": 1, "expenses": [record(amount="0")]})
+    with pytest.raises(StorageError) as caught:
+        JsonExpenseRepository(path).load()
+    assert "greater than zero. Fix or move the file" in str(caught.value)

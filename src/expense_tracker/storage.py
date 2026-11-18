@@ -73,6 +73,10 @@ class JsonExpenseRepository:
             text = self.path.read_text(encoding="utf-8")
         except FileNotFoundError:
             return []
+        except UnicodeDecodeError as error:
+            raise self._corrupt(
+                f"it is not UTF-8 text (byte {error.start} cannot be read)"
+            ) from error
         except OSError as error:
             raise StorageError(f"Cannot read {self.path}: {error.strerror or error}") from error
 
@@ -126,6 +130,6 @@ class JsonExpenseRepository:
 
     def _corrupt(self, reason: str) -> StorageError:
         return StorageError(
-            f"The data file {self.path} is damaged: {reason}. "
+            f"The data file {self.path} is damaged: {reason.rstrip('.')}. "
             "Fix or move the file, then try again. It was not changed."
         )
