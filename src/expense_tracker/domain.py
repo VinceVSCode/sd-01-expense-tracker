@@ -6,6 +6,7 @@ the rules easy to test and lets the storage and the interface change freely.
 
 from __future__ import annotations
 
+import re
 from collections.abc import Iterable
 from dataclasses import dataclass, field
 from datetime import date
@@ -13,6 +14,12 @@ from decimal import Decimal, InvalidOperation
 from typing import Protocol
 
 CENT = Decimal("0.01")
+# The largest amount accepted. Larger values would lose cents once added up,
+# because ``Decimal`` keeps 28 significant digits by default.
+MAX_AMOUNT = Decimal("999999999.99")
+# An amount typed as text: digits with an optional decimal point and sign.
+# Scientific notation (1e2), separators (1,000) and other scripts are refused.
+_PLAIN_NUMBER = re.compile(r"[+-]?([0-9]+\.?[0-9]*|\.[0-9]+)")
 MAX_CATEGORY_LENGTH = 30
 MAX_DESCRIPTION_LENGTH = 200
 
@@ -25,20 +32,30 @@ def parse_amount(value: Decimal | str | int) -> Decimal:
     """Return ``value`` as a positive amount with exactly two decimal places.
 
     Floats are refused, because they cannot hold most decimal amounts exactly.
+    Text must be plain digits with an optional decimal point, such as ``12.50``.
     """
     if isinstance(value, bool) or not isinstance(value, Decimal | str | int):
         raise ValidationError(f"Amount must be a decimal number, not {type(value).__name__}.")
+    if isinstance(value, str) and not _PLAIN_NUMBER.fullmatch(value.strip()):
+        raise ValidationError(
+            f"Amount {value!r} is not a number. Use digits and an optional "
+            "decimal point, for example 12.50."
+        )
     try:
         amount = Decimal(value.strip()) if isinstance(value, str) else Decimal(value)
-    except InvalidOperation:
+    except InvalidOperation:  # pragma: no cover - the pattern above lets only numbers through
         raise ValidationError(f"Amount {value!r} is not a number.") from None
     if not amount.is_finite():
         raise ValidationError(f"Amount {value!r} is not a number.")
     if amount <= 0:
         raise ValidationError("Amount must be greater than zero.")
-    if amount != amount.quantize(CENT):
+    if amount > MAX_AMOUNT:
+        raise ValidationError(f"Amount can be at most {MAX_AMOUNT:,}.")
+    # Safe from decimal.InvalidOperation: the amount is at most MAX_AMOUNT here.
+    rounded = amount.quantize(CENT)
+    if amount != rounded:
         raise ValidationError("Amount can have at most two decimal places.")
-    return amount.quantize(CENT)
+    return rounded
 
 
 def normalise_category(value: str) -> str:

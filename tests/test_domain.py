@@ -55,7 +55,15 @@ SAMPLE = [
 
 @pytest.mark.parametrize(
     ("raw", "expected"),
-    [("12.5", "12.50"), (" 3 ", "3.00"), (7, "7.00"), (Decimal("0.01"), "0.01"), ("1e2", "100.00")],
+    [
+        ("12.5", "12.50"),
+        (" 3 ", "3.00"),
+        ("12.", "12.00"),
+        (".5", "0.50"),
+        (7, "7.00"),
+        (Decimal("0.01"), "0.01"),
+        ("999999999.99", "999999999.99"),
+    ],
 )
 def test_parse_amount_accepts_valid_values(raw: object, expected: str) -> None:
     amount = parse_amount(raw)  # type: ignore[arg-type]
@@ -64,11 +72,34 @@ def test_parse_amount_accepts_valid_values(raw: object, expected: str) -> None:
 
 
 @pytest.mark.parametrize(
-    "raw", ["abc", "", "0", "-5", "1.999", "NaN", "Infinity", 12.5, True, None]
+    "raw",
+    ["abc", "", "0", "-5", "1.999", "NaN", "Infinity", Decimal("NaN"), Decimal("Infinity"),
+     12.5, True, None],
 )
 def test_parse_amount_rejects_invalid_values(raw: object) -> None:
     with pytest.raises(ValidationError):
         parse_amount(raw)  # type: ignore[arg-type]
+
+
+@pytest.mark.parametrize("raw", ["1e2", "1E2", "1,000.50", "1_000", "\u0661\u0662", "12 50", "."])
+def test_parse_amount_accepts_only_plain_digits(raw: str) -> None:
+    with pytest.raises(ValidationError, match="Use digits and an optional decimal point"):
+        parse_amount(raw)
+
+
+@pytest.mark.parametrize(
+    "raw",
+    ["1000000000", "1e30", "99999999999999999999999999999", 10**40, Decimal("1E+40")],
+)
+def test_parse_amount_refuses_amounts_that_are_too_large(raw: object) -> None:
+    # Before 1.0.1 these raised decimal.InvalidOperation, a crash with a traceback.
+    with pytest.raises(ValidationError):
+        parse_amount(raw)  # type: ignore[arg-type]
+
+
+def test_the_largest_amounts_still_add_up_exactly() -> None:
+    largest = parse_amount("999999999.99")
+    assert sum([largest] * 1000, Decimal("0.00")) == Decimal("999999999990.00")
 
 
 def test_amounts_add_up_exactly() -> None:
