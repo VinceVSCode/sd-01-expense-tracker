@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import csv
 import json
+import os
 import subprocess
 import sys
 from datetime import date
@@ -74,6 +75,9 @@ def test_add_uses_today_when_no_date_is_given(cli: Cli) -> None:
     ("amount", "message"),
     [
         ("abc", "is not a number"),
+        ("1e2", "is not a number"),
+        ("1e30", "is not a number"),
+        ("99999999999999999999999999999", "at most 999,999,999.99"),
         ("0", "greater than zero"),
         ("-5", "greater than zero"),
         ("1.234", "two decimal places"),
@@ -244,12 +248,14 @@ def test_the_default_data_file_is_in_the_home_folder() -> None:
 # --- the real entry point ----------------------------------------------------
 
 
-def run_module(*argv: str) -> subprocess.CompletedProcess[str]:
+def run_module(*argv: str, env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         [sys.executable, "-m", "expense_tracker", *argv],
         capture_output=True,
         text=True,
+        encoding="utf-8",
         check=False,
+        env=env,
     )
 
 
@@ -270,3 +276,29 @@ def test_python_m_runs_a_command_end_to_end(tmp_path: Path) -> None:
     assert added.returncode == 0
     listed = run_module("--file", data_file, "list")
     assert "books" in listed.stdout and "total 9.99" in listed.stdout
+
+
+def test_non_latin_text_prints_when_output_is_redirected(tmp_path: Path) -> None:
+    # Redirected output on Windows uses a legacy code page such as cp1252. Before
+    # 1.0.1, printing Greek text then raised UnicodeEncodeError after the expense
+    # had already been saved. PYTHONIOENCODING forces that code page on any system.
+    env = {**os.environ, "PYTHONIOENCODING": "cp1252"}
+    env.pop("PYTHONUTF8", None)
+    data_file = str(tmp_path / "expenses.json")
+    added = run_module(
+        "--file", data_file, "add", "12.50", "\u03c6\u03b1\u03b3\u03b7\u03c4\u03cc",
+        "--note", "\u03ba\u03b1\u03c6\u03ad\u03c2", "--date", "2026-11-01", env=env,
+    )
+    assert (added.returncode, added.stderr) == (0, "")
+    assert "\u03c6\u03b1\u03b3\u03b7\u03c4\u03cc" in added.stdout
+    listed = run_module("--file", data_file, "list", env=env)
+    assert (listed.returncode, listed.stderr) == (0, "")
+    assert "\u03ba\u03b1\u03c6\u03ad\u03c2" in listed.stdout
+
+
+def test_errors_are_also_printed_as_utf8(tmp_path: Path) -> None:
+    env = {**os.environ, "PYTHONIOENCODING": "cp1252"}
+    data_file = str(tmp_path / "expenses.json")
+    failed = run_module("--file", data_file, "add", "\u0661\u0662", "food", env=env)
+    assert failed.returncode == 1
+    assert "\u0661\u0662" in failed.stderr and "Traceback" not in failed.stderr

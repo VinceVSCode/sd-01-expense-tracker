@@ -7,6 +7,7 @@ or a file problem, 2 for a wrong command line (set by ``argparse``).
 from __future__ import annotations
 
 import argparse
+import io
 import os
 import sys
 from collections.abc import Callable, Mapping, Sequence
@@ -179,6 +180,19 @@ def run(arguments: argparse.Namespace, tracker: ExpenseTracker, today: date) -> 
     return f"Wrote {count} expense{plural} to {arguments.output}."
 
 
+def use_utf8_output() -> None:
+    """Print UTF-8 text even when the output is redirected to a file or a pipe.
+
+    On Windows, redirected output uses the system's legacy code page, which
+    cannot hold Greek or most other non-Latin text. Printing such text would
+    then raise ``UnicodeEncodeError`` after the command had already done its work.
+    The data and CSV files are UTF-8, so the printed output matches them.
+    """
+    for stream in (sys.stdout, sys.stderr):
+        if isinstance(stream, io.TextIOWrapper) and stream.encoding.lower() != "utf-8":
+            stream.reconfigure(encoding="utf-8")
+
+
 def main(
     argv: Sequence[str] | None = None,
     *,
@@ -186,6 +200,7 @@ def main(
     today: Callable[[], date] = date.today,
 ) -> int:
     """Run the command line and return the exit code."""
+    use_utf8_output()
     arguments = build_parser().parse_args(argv)
     data_file = resolve_data_file(
         arguments.file, os.environ if environment is None else environment
