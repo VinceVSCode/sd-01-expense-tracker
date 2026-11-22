@@ -149,7 +149,7 @@ python scripts/validate_portfolio.py
 - Amounts in scientific notation (`1e2`) are refused.
 - Each of these has a test that failed before the fix.
 
-## Next steps
+## Considered improvements
 
 - `edit` and `delete` commands.
 - Monthly budgets per category, with a warning when one is exceeded.
